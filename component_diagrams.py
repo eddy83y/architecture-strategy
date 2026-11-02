@@ -200,7 +200,7 @@ def validate(spec,paths):
 
 def render(sid,spec):
     slug=sid.lower()+'-component';paths=route_all(spec['nodes'],spec['edges']);validate(spec,paths)
-    out=f'<svg class="component-diagram" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="{slug}-title {slug}-desc"><title id="{slug}-title">{sid} 핵심 컴포넌트 구성</title><desc id="{slug}-desc">{escape(spec["description"])}</desc><defs>'
+    out=f'<svg class="component-diagram" style="display:block;width:100%;max-width:100%;min-width:0;height:auto" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="{slug}-title {slug}-desc"><title id="{slug}-title">{sid} 핵심 컴포넌트 구성</title><desc id="{slug}-desc">{escape(spec["description"])}</desc><defs>'
     for suffix,color in [('dependency',MUTED),('replication',ACCENT),('external',LINK)]:
         out+=f'<marker id="{slug}-{suffix}" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="{color}" stroke-width="1.2"/></marker>'
     out+='</defs>'+f'<rect width="1280" height="720" fill="{PAPER}"/>'

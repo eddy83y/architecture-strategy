@@ -2,6 +2,7 @@
 from pathlib import Path
 from html import escape as e
 import json
+import hashlib
 import re
 from component_diagrams import build as build_component_diagrams
 
@@ -12,6 +13,8 @@ QAS = json.loads((CONTENT/'qas.json').read_text(encoding='utf-8'))
 RESEARCH = json.loads((CONTENT/'strategies.json').read_text(encoding='utf-8'))
 FIGURES = json.loads((CONTENT/'diagram_markup.json').read_text(encoding='utf-8'))
 STRATEGIES = {s['id']:s for s in RESEARCH['strategies']}
+CSS_VERSION = hashlib.sha256((SITE/'assets/site.css').read_bytes()).hexdigest()[:12]
+FIGURES = {sid: svg.replace('<svg ', '<svg style="display:block;width:100%;max-width:100%;min-width:0;height:auto" ', 1) for sid, svg in FIGURES.items()}
 
 
 def nav(current='index'):
@@ -25,7 +28,7 @@ def shell(title,description,body,current='index'):
 <meta name="description" content="{e(description,quote=True)}"><meta name="theme-color" content="#f5f5f5">
 <title>{e(title)} | 자동차보험 아키텍처 전략</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400&display=swap">
-<link rel="stylesheet" href="assets/site.css"></head><body>
+<link rel="stylesheet" href="assets/site.css?v={CSS_VERSION}"></head><body>
 <a class="skip" href="#main">본문으로 건너뛰기</a>
 <header class="site-header"><div class="header-inner"><a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">A</span><span>Architecture Strategy<small>다이렉트 자동차보험 시스템</small></span></a>{nav(current)}</div></header>
 <main id="main">{body}</main>
