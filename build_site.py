@@ -2,6 +2,7 @@
 from pathlib import Path
 from html import escape as e
 import json
+import re
 
 ROOT = Path(__file__).resolve().parent
 SITE = ROOT/'site'
@@ -103,6 +104,12 @@ def main():
     (SITE/'assets').mkdir(exist_ok=True)
     (SITE/'.nojekyll').write_text('',encoding='utf-8')
     home()
+    # A branch-root Pages deployment must also have an HTML entry point.
+    # Keep fragment links on this page and rebase only local file links.
+    entry=(SITE/'index.html').read_text(encoding='utf-8')
+    entry=re.sub(r'\b(href|src)="(?!https?://|#|/)([^"]+)"',r'\1="site/\2"',entry)
+    (ROOT/'index.html').write_text(entry,encoding='utf-8')
+    (ROOT/'.nojekyll').write_text('',encoding='utf-8')
     for q in QAS:
         qas_page(q)
     error='<section class="page-intro"><p class="eyebrow">404</p><h1>페이지를 찾을 수 없습니다.</h1><p class="lead">첫 화면에서 QAS를 다시 선택해 주세요.</p><a class="text-link" href="index.html">전체 QAS로 이동 →</a></section>'

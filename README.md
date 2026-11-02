@@ -36,6 +36,8 @@ python build_site.py
 
 `site/`에는 배포할 파일만 들어 있다. GitHub Actions는 이 폴더만 배포한다. 공개 페이지에서 작업 PC의 절대 경로나 배포 폴더 밖의 파일을 참조하지 않는다.
 
+저장소 루트의 `index.html`과 `.nojekyll`도 함께 생성한다. 저장소 루트가 배포되는 경우에도 `/`에서는 QAS 첫 화면이 열리며, README를 첫 화면으로 사용하지 않는다. 루트 첫 화면의 링크와 스타일은 `site/`의 파일을 참조한다.
+
 ## GitHub Pages 배포
 
 대상 저장소는 `eddy83y/architecture-strategy`다. 기본 브랜치는 `main`으로 가정했다. 다른 기본 브랜치를 사용한다면 `.github/workflows/deploy-pages.yml`의 브랜치 설정을 맞춘다.
