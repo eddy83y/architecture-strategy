@@ -1,6 +1,6 @@
 # 다이렉트 자동차보험 아키텍처 전략
 
-성능·가용성·복구성 QAS별로 전략 3개와 다이어그램, 장단점, Trade-off 비교, 선택 근거를 담은 정적 사이트다.
+성능·가용성·복구성 QAS별로 전략 3개와 기존 동작 그림·핵심 Component Diagram, 장단점, Trade-off 비교, 선택 근거를 담은 정적 사이트다.
 
 장단점은 전략별 설명 문단으로 작성하고, Trade-off는 성능·신뢰성·유지보수·보안의 정성 비교표로 제시한다.
 
@@ -26,6 +26,8 @@ python -m http.server 8080 --directory site
 - `content/strategies.json`: 기존 조사에 근거한 전략 9개와 출처 정보
 - `content/qas.json`: 확정 QAS, 장단점, Trade-off 표, 선택 이유와 보완점
 - `content/diagram_markup.json`: 기존 전략별 다이어그램의 인라인 SVG
+- `content/components.json`: 전략별 핵심 컴포넌트와 의존 관계
+- `component_diagrams.py`: 간소화 UML 그림과 단독 HTML 생성
 - `site/assets/site.css`: 화면·모바일·인쇄 스타일
 
 수정 후 Python 표준 라이브러리만으로 페이지를 다시 만든다.
@@ -54,3 +56,9 @@ python build_site.py
 ## 자료의 범위
 
 기존 조사 문서 01~06과 점검 문서 07을 바탕으로 작성했다. 각 QAS 페이지에서 사용한 원자료와 확인 범위를 볼 수 있다. 비교표는 정성 판단이며 실측 점수나 보안 취약성 판정이 아니다. 최종 선정·구현·성능 시험·무중단 검증·DR 훈련의 완료 보고로 해석하지 않는다.
+
+## Component Diagram
+
+기존 그림 아래에 전략별 핵심 Component Diagram을 추가한다. 점선 의존 화살표는 사용하는 쪽에서 제공하는 쪽을 향한다. 센터 간 동기 복제는 별도 실선으로 구분한다. 저장소·외부 시스템·동일 컴포넌트의 실행 인스턴스는 구분해서 표시하며 상세 포트·인터페이스는 생략한다.
+
+`site/components/p1.html`부터 `r3.html`까지 단독 열람용 HTML 9개도 함께 생성한다. 모든 그림은 창 너비에 맞춰 비례 축소한다.

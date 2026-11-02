@@ -3,6 +3,7 @@ from pathlib import Path
 from html import escape as e
 import json
 import re
+from component_diagrams import build as build_component_diagrams
 
 ROOT = Path(__file__).resolve().parent
 SITE = ROOT/'site'
@@ -14,7 +15,7 @@ STRATEGIES = {s['id']:s for s in RESEARCH['strategies']}
 
 
 def nav(current='index'):
-    links=[('index','index.html','전체 QAS')]+[(q['slug'],q['slug']+'.html',q['name']) for q in QAS]
+    links=[('index','index.html','전체 QAS')]+[(q['slug'],q['slug']+'.html','QAS '+q['number']) for q in QAS]
     return '<nav class="primary-nav" aria-label="주요 메뉴">'+''.join(f'<a href="{href}"'+(' aria-current="page"' if key==current else '')+f'>{e(name)}</a>' for key,href,name in links)+'</nav>'
 
 
@@ -28,7 +29,7 @@ def shell(title,description,body,current='index'):
 <a class="skip" href="#main">본문으로 건너뛰기</a>
 <header class="site-header"><div class="header-inner"><a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">A</span><span>Architecture Strategy<small>다이렉트 자동차보험 시스템</small></span></a>{nav(current)}</div></header>
 <main id="main">{body}</main>
-<footer class="site-footer"><div><strong>다이렉트 자동차보험 · 아키텍처 전략</strong><p>기존 조사 자료에 근거한 설계 검토 · 2026-11-02</p></div><p>성능·가용성·복구성 / 개발비 10억 원 이내 · 운영비 별도</p><a href="index.html">전체 QAS로 돌아가기 ↑</a></footer>
+<footer class="site-footer"><div><strong>다이렉트 자동차보험 · 아키텍처 전략</strong><p>기존 조사 자료에 근거한 설계 검토 · 2026-11-02</p></div><a href="index.html">전체 QAS로 돌아가기 ↑</a></footer>
 </body></html>'''
 
 
@@ -38,7 +39,7 @@ def home():
         rows.append(f'''<a class="qas-row" href="{q['slug']}.html" aria-describedby="intro-{q['slug']}"><span class="row-number">{q['number']}</span><div class="row-content"><p class="eyebrow">{e(q['attribute'])}</p><h2>{q['name']}</h2><p id="intro-{q['slug']}">{e(q['summary'])}</p></div><div class="row-choice"><span>선택 전략</span><strong>{q['selected']}</strong><p>{e(q['short_choice'])}</p></div><span class="row-arrow" aria-hidden="true">↗</span></a>''')
     body='''<section class="home-intro"><div><p class="eyebrow">QUALITY ATTRIBUTE SCENARIOS</p><h1>다이렉트 자동차보험<br>아키텍처 전략</h1><p class="lead">세 가지 품질 요구사항을 기준으로 전략을 비교하고,<br class="desktop-break"> 선택 근거와 검증할 조건을 정리했다.</p></div><div class="intro-meta"><span>검토 범위</span><p><strong>3</strong> QAS</p><p><strong>9</strong> 통합 전략</p><p><strong>3</strong> 선택 결과</p></div></section>
 <section class="home-qas" aria-labelledby="qas-list-title"><div class="section-heading"><h2 id="qas-list-title">QAS 선택</h2><p>요구사항부터 비교·선택까지, QAS별로 확인할 수 있다.</p></div>'''+''.join(rows)+'''</section>
-<section class="reading-guide"><h2>자료를 읽는 순서</h2><ol><li><span>01</span>확정 요구사항</li><li><span>02</span>전략 3개와 다이어그램</li><li><span>03</span>장단점·Trade-off</li><li><span>04</span>선택 이유와 보완점</li></ol><p>각 전략은 Style·Pattern·Tactics를 함께 고려했다. 비교표의 기호는 정성 판단이며 실측 점수나 보안 취약성 판정은 아니다.</p></section>'''
+<section class="reading-guide"><h2>자료를 읽는 순서</h2><ol><li><span>01</span>확정 요구사항</li><li><span>02</span>전략 3개와 다이어그램</li><li><span>03</span>장단점·Trade-off</li><li><span>04</span>선택 이유와 보완점</li></ol><p>각 전략은 Style·Pattern·Tactics를 함께 고려했다.</p></section>'''
     (SITE/'index.html').write_text(shell('QAS 선택','성능·가용성·복구성 QAS별 아키텍처 전략, 장단점과 trade-off 비교, 선택 근거.',body),encoding='utf-8')
 
 
@@ -52,7 +53,12 @@ def strategy(s,q):
     sid=s['id']; chosen=sid==q['selected']
     rows=''.join(f'<tr><th scope="row">{label}</th><td>{e(s[key])}</td></tr>' for label,key in [('Style','style'),('Pattern','pattern'),('Tactics','tactics')])
     citations=' · '.join(f'<a href="#source-{key}">{key}</a>' for key in s['evidence'])
-    return f'''<article class="strategy" id="{sid.lower()}"><div class="strategy-heading"><span class="strategy-id">{sid}</span><h3>{e(s['title'])}</h3>{'<span class="selected-tag">선택 전략</span>' if chosen else ''}</div><p class="strategy-intro">{e(s['intro'])}</p><div class="table-wrap"><table class="spt"><caption class="sr-only">{sid}의 Style, Pattern, Tactics</caption><tbody>{rows}</tbody></table></div><dl class="strategy-notes"><div><dt>동작</dt><dd>{e(s['flow'])}</dd></div><div><dt>QAS 연결</dt><dd>{e(s['fit'])}</dd></div><div><dt>적용 한계</dt><dd>{e(s['limits'])}</dd></div></dl><p class="citations">근거 {citations}</p><figure><div class="figure-heading"><span>{sid} 구조와 동작</span><small>가로로 스크롤해 전체 그림을 확인할 수 있다.</small></div><div class="diagram-container" tabindex="0" role="region" aria-label="{sid} 다이어그램 가로 스크롤 영역">{FIGURES[sid]}</div><figcaption>{e(s['diagram'])}</figcaption></figure></article>'''
+    return f'''<article class="strategy" id="{sid.lower()}"><div class="strategy-heading"><span class="strategy-id">{sid}</span><h3>{e(s['title'])}</h3>{'<span class="selected-tag">선택 전략</span>' if chosen else ''}</div><p class="strategy-intro">{e(s['intro'])}</p><div class="table-wrap"><table class="spt"><caption class="sr-only">{sid}의 Style, Pattern, Tactics</caption><tbody>{rows}</tbody></table></div><dl class="strategy-notes"><div><dt>동작</dt><dd>{e(s['flow'])}</dd></div><div><dt>QAS 연결</dt><dd>{e(s['fit'])}</dd></div><div><dt>적용 한계</dt><dd>{e(s['limits'])}</dd></div></dl><p class="citations">근거 {citations}</p><figure><div class="figure-heading"><span>{sid} 구조와 동작</span></div><div class="diagram-container">{FIGURES[sid]}</div><figcaption>{e(s['diagram'])}</figcaption></figure>{component_figure(sid)}</article>'''
+
+
+def component_figure(sid):
+    figure=COMPONENT_FIGURES[sid]
+    return f'<figure class="component-overview"><div class="figure-heading"><span>{sid} 핵심 Component Diagram</span><a class="component-open" href="components/{sid.lower()}.html" target="_blank" rel="noopener noreferrer">그림만 보기 ↗</a></div><div class="diagram-container">{figure["svg"]}</div><figcaption>{e(figure["note"])}</figcaption></figure>'
 
 
 def pros_cons(q):
@@ -100,6 +106,8 @@ def qas_page(q):
 
 
 def main():
+    global COMPONENT_FIGURES
+    COMPONENT_FIGURES=build_component_diagrams(ROOT,STRATEGIES)
     SITE.mkdir(exist_ok=True)
     (SITE/'assets').mkdir(exist_ok=True)
     (SITE/'.nojekyll').write_text('',encoding='utf-8')
@@ -114,7 +122,7 @@ def main():
         qas_page(q)
     error='<section class="page-intro"><p class="eyebrow">404</p><h1>페이지를 찾을 수 없습니다.</h1><p class="lead">첫 화면에서 QAS를 다시 선택해 주세요.</p><a class="text-link" href="index.html">전체 QAS로 이동 →</a></section>'
     (SITE/'404.html').write_text(shell('페이지를 찾을 수 없습니다','QAS 선택 화면으로 돌아가기',error),encoding='utf-8')
-    print(json.dumps({'pages':5,'qas':len(QAS),'strategies':len(STRATEGIES),'selected':[q['selected'] for q in QAS],'site':str(SITE)},ensure_ascii=False))
+    print(json.dumps({'pages':5+len(COMPONENT_FIGURES),'component_diagrams':len(COMPONENT_FIGURES),'qas':len(QAS),'strategies':len(STRATEGIES),'selected':[q['selected'] for q in QAS],'site':str(SITE)},ensure_ascii=False))
 
 
 if __name__=='__main__':

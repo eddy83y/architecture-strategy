@@ -1,0 +1,1070 @@
+{
+  "P1": {
+    "description": "요청 분산이 견적·접수 컴포넌트를 사용하며, 두 업무는 공통 데이터 접근과 버전별 캐시를 통해 업무 저장소를 이용한다.",
+    "nodes": [
+      {
+        "id": "entry",
+        "title": "요청 분산",
+        "subtitle": "무상태 업무 인스턴스 분산",
+        "x": 512,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "quote",
+        "title": "보험료 산출",
+        "subtitle": "입력·요율 버전 일치",
+        "x": 64,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": true
+      },
+      {
+        "id": "intake",
+        "title": "가입 접수",
+        "subtitle": "검증·접수번호 발급",
+        "x": 960,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "access",
+        "title": "데이터 접근",
+        "subtitle": "공통 원본 접근",
+        "x": 512,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "cache",
+        "title": "버전별 캐시",
+        "subtitle": "상품·요율 기준정보",
+        "x": 64,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": false
+      },
+      {
+        "id": "db",
+        "title": "업무 저장소",
+        "subtitle": "기준정보·접수 데이터",
+        "x": 512,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "entry",
+        "target": "quote",
+        "kind": "dependency"
+      },
+      {
+        "source": "entry",
+        "target": "intake",
+        "kind": "dependency"
+      },
+      {
+        "source": "quote",
+        "target": "cache",
+        "kind": "dependency"
+      },
+      {
+        "source": "quote",
+        "target": "access",
+        "kind": "dependency"
+      },
+      {
+        "source": "intake",
+        "target": "access",
+        "kind": "dependency"
+      },
+      {
+        "source": "access",
+        "target": "db",
+        "kind": "dependency"
+      }
+    ],
+    "zones": [],
+    "note": "견적·접수·데이터 접근은 한 애플리케이션 내부의 논리 컴포넌트이며, 인스턴스 복제는 요청 분산으로 요약했다."
+  },
+  "P2": {
+    "description": "견적과 접수의 동기 경로를 분리하고, 이벤트 전달기와 후속 작업자가 업무·Outbox 저장소 및 메시지 큐를 사용한다.",
+    "nodes": [
+      {
+        "id": "quote",
+        "title": "보험료 산출",
+        "subtitle": "동기 계산·결과 응답",
+        "x": 512,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "intake",
+        "title": "가입 접수",
+        "subtitle": "검증·번호 발급·원자적 저장",
+        "x": 64,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": true
+      },
+      {
+        "id": "store",
+        "title": "업무·Outbox 저장소",
+        "subtitle": "접수 내용·후속 처리 의도",
+        "x": 512,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": false
+      },
+      {
+        "id": "relay",
+        "title": "이벤트 전달기",
+        "subtitle": "저장된 이벤트 발행",
+        "x": 960,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "queue",
+        "title": "메시지 큐",
+        "subtitle": "후속 작업 완충",
+        "x": 960,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": false
+      },
+      {
+        "id": "worker",
+        "title": "후속 작업자",
+        "subtitle": "심사·연계 및 멱등 처리",
+        "x": 512,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "entry",
+        "title": "요청 진입",
+        "subtitle": "견적·가입 접수 경로 분기",
+        "x": 64,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "entry",
+        "target": "quote",
+        "kind": "dependency"
+      },
+      {
+        "source": "entry",
+        "target": "intake",
+        "kind": "dependency"
+      },
+      {
+        "source": "intake",
+        "target": "store",
+        "kind": "dependency"
+      },
+      {
+        "source": "relay",
+        "target": "store",
+        "kind": "dependency"
+      },
+      {
+        "source": "relay",
+        "target": "queue",
+        "kind": "dependency"
+      },
+      {
+        "source": "worker",
+        "target": "queue",
+        "kind": "dependency"
+      }
+    ],
+    "zones": [],
+    "note": "보험료 산출은 독립된 동기 응답 경로다. 전달기는 큐에 발행하고 작업자는 큐를 소비하며, 화살표는 처리 순서가 아닌 사용 의존성을 나타낸다."
+  },
+  "P3": {
+    "description": "요청 라우터가 견적·접수 서비스를 구분하며, 각 서비스는 조회·명령 모델과 캐시 및 업무 저장소를 이용한다.",
+    "nodes": [
+      {
+        "id": "router",
+        "title": "요청 라우터",
+        "subtitle": "업무별 독립 확장 경계",
+        "x": 512,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "quote",
+        "title": "견적 서비스",
+        "subtitle": "읽기·보험료 계산",
+        "x": 64,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": true
+      },
+      {
+        "id": "intake",
+        "title": "접수 서비스",
+        "subtitle": "검증·접수번호·저장",
+        "x": 960,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "read",
+        "title": "조회 모델",
+        "subtitle": "견적 조회 책임",
+        "x": 64,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "command",
+        "title": "명령 모델",
+        "subtitle": "가입 접수 쓰기 책임",
+        "x": 960,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "cache",
+        "title": "버전별 캐시",
+        "subtitle": "유효한 상품·요율 조회",
+        "x": 64,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": false
+      },
+      {
+        "id": "store",
+        "title": "업무 저장소",
+        "subtitle": "원본·접수 영속화",
+        "x": 960,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "router",
+        "target": "quote",
+        "kind": "dependency"
+      },
+      {
+        "source": "router",
+        "target": "intake",
+        "kind": "dependency"
+      },
+      {
+        "source": "quote",
+        "target": "read",
+        "kind": "dependency"
+      },
+      {
+        "source": "intake",
+        "target": "command",
+        "kind": "dependency"
+      },
+      {
+        "source": "read",
+        "target": "cache",
+        "kind": "dependency"
+      },
+      {
+        "source": "read",
+        "target": "store",
+        "kind": "dependency"
+      },
+      {
+        "source": "command",
+        "target": "store",
+        "kind": "dependency"
+      }
+    ],
+    "zones": [],
+    "note": "조회·명령 모델은 논리 책임이다. 별도 물리 DB와 Event Sourcing을 도입한 구조로 해석하지 않는다."
+  },
+  "A1": {
+    "description": "트래픽 라우터가 기존·카나리 버전으로 요청을 나누며, 거래 관측과 배포 제어가 공통 상태를 유지하는 두 버전의 노출 범위를 조절한다.",
+    "nodes": [
+      {
+        "id": "router",
+        "title": "트래픽 라우터",
+        "subtitle": "기존·카나리 요청 배분",
+        "x": 512,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "old",
+        "title": "기존 업무 버전",
+        "subtitle": "동일 업무의 운영 인스턴스",
+        "x": 64,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "instance",
+        "focus": false
+      },
+      {
+        "id": "new",
+        "title": "카나리 업무 버전",
+        "subtitle": "일부 트래픽으로 변경 검증",
+        "x": 960,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "instance",
+        "focus": true
+      },
+      {
+        "id": "observe",
+        "title": "거래 관측",
+        "subtitle": "업무 오류·응답시간 수집",
+        "x": 64,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "control",
+        "title": "배포 제어",
+        "subtitle": "카나리 확대·기존 버전 복귀",
+        "x": 512,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "state",
+        "title": "공통 상태 저장소",
+        "subtitle": "업무·임시 저장 데이터",
+        "x": 512,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "router",
+        "target": "old",
+        "kind": "dependency"
+      },
+      {
+        "source": "router",
+        "target": "new",
+        "kind": "dependency"
+      },
+      {
+        "source": "old",
+        "target": "state",
+        "kind": "dependency"
+      },
+      {
+        "source": "new",
+        "target": "state",
+        "kind": "dependency"
+      },
+      {
+        "source": "control",
+        "target": "observe",
+        "kind": "dependency"
+      },
+      {
+        "source": "control",
+        "target": "router",
+        "kind": "dependency"
+      }
+    ],
+    "zones": [],
+    "note": "기존·카나리 상자는 동일 업무 컴포넌트의 버전별 실행 인스턴스다. 거래 관측의 개별 수집 연결은 생략했다."
+  },
+  "A2": {
+    "description": "배포 제어가 트래픽 전환과 스키마 이행을 관리하고, Blue·Green 업무 버전이 호환되는 공통 상태 저장소를 함께 사용한다.",
+    "nodes": [
+      {
+        "id": "switch",
+        "title": "트래픽 전환",
+        "subtitle": "검증된 환경으로 요청 연결",
+        "x": 512,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "blue",
+        "title": "Blue 업무 버전",
+        "subtitle": "현재 운영 인스턴스",
+        "x": 64,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "instance",
+        "focus": false
+      },
+      {
+        "id": "green",
+        "title": "Green 업무 버전",
+        "subtitle": "사전 검증한 새 인스턴스",
+        "x": 960,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "instance",
+        "focus": true
+      },
+      {
+        "id": "control",
+        "title": "배포 제어",
+        "subtitle": "사전 검증·전환·복귀",
+        "x": 512,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "migration",
+        "title": "스키마 이행",
+        "subtitle": "추가·이행·전환·정리",
+        "x": 64,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "store",
+        "title": "공통 상태 저장소",
+        "subtitle": "호환 스키마·임시 저장",
+        "x": 512,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "switch",
+        "target": "blue",
+        "kind": "dependency"
+      },
+      {
+        "source": "switch",
+        "target": "green",
+        "kind": "dependency"
+      },
+      {
+        "source": "blue",
+        "target": "store",
+        "kind": "dependency"
+      },
+      {
+        "source": "green",
+        "target": "store",
+        "kind": "dependency"
+      },
+      {
+        "source": "control",
+        "target": "switch",
+        "kind": "dependency"
+      },
+      {
+        "source": "control",
+        "target": "migration",
+        "kind": "dependency"
+      },
+      {
+        "source": "migration",
+        "target": "store",
+        "kind": "dependency",
+        "source_side": "left",
+        "target_side": "bottom"
+      }
+    ],
+    "zones": [],
+    "note": "Blue·Green은 별도 업무 기능이 아닌 동일 컴포넌트의 환경별 인스턴스다. 공통 저장소의 호환성을 유지한다."
+  },
+  "A3": {
+    "description": "업무 서비스는 접수와 Outbox를 영속화하며, 이벤트 전달기·연계 작업자·회로 차단 어댑터가 외부 시스템 의존성을 격리한다.",
+    "nodes": [
+      {
+        "id": "business",
+        "title": "업무 서비스",
+        "subtitle": "내부 거래·영속 접수",
+        "x": 64,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "store",
+        "title": "업무·Outbox 저장소",
+        "subtitle": "접수 상태·연계 의도",
+        "x": 512,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": false
+      },
+      {
+        "id": "relay",
+        "title": "이벤트 전달기",
+        "subtitle": "미전달 이벤트 발행",
+        "x": 960,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "queue",
+        "title": "메시지 큐",
+        "subtitle": "보류 가능한 요청 완충",
+        "x": 960,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": false
+      },
+      {
+        "id": "worker",
+        "title": "연계 작업자",
+        "subtitle": "재시도·멱등 처리·대사",
+        "x": 512,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "adapter",
+        "title": "외부 연계 어댑터",
+        "subtitle": "회로 차단·타임아웃",
+        "x": 512,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": true
+      },
+      {
+        "id": "external",
+        "title": "외부 시스템",
+        "subtitle": "보험개발원·결제 등",
+        "x": 960,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "external",
+        "focus": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "business",
+        "target": "store",
+        "kind": "dependency"
+      },
+      {
+        "source": "relay",
+        "target": "store",
+        "kind": "dependency"
+      },
+      {
+        "source": "relay",
+        "target": "queue",
+        "kind": "dependency"
+      },
+      {
+        "source": "worker",
+        "target": "queue",
+        "kind": "dependency"
+      },
+      {
+        "source": "worker",
+        "target": "adapter",
+        "kind": "dependency"
+      },
+      {
+        "source": "adapter",
+        "target": "external",
+        "kind": "dependency"
+      }
+    ],
+    "zones": [],
+    "note": "보류 가능한 요청의 연계 경계를 중심으로 표시했다. 정확한 보험료 산출·지급 완료에 필요한 외부 결과를 큐 적재로 대체하지 않는다."
+  },
+  "R1": {
+    "description": "진입 경로가 활성 센터의 업무 컴포넌트를 사용하며, 복제·전환 제어가 단일 쓰기 주체와 주센터·DR 저장소의 동기 복제를 관리한다.",
+    "nodes": [
+      {
+        "id": "entry",
+        "title": "진입 경로",
+        "subtitle": "활성 센터로 업무 연결",
+        "x": 512,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "primary",
+        "title": "주센터 업무",
+        "subtitle": "현재 쓰기 주체",
+        "x": 64,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "instance",
+        "focus": false
+      },
+      {
+        "id": "standby",
+        "title": "DR 업무",
+        "subtitle": "사전 준비한 대기 인스턴스",
+        "x": 960,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "instance",
+        "focus": false
+      },
+      {
+        "id": "pstore",
+        "title": "주센터 저장소",
+        "subtitle": "업무·임시 저장",
+        "x": 64,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": false
+      },
+      {
+        "id": "dstore",
+        "title": "DR 저장소",
+        "subtitle": "성공 응답 데이터의 생존 사본",
+        "x": 960,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": true
+      },
+      {
+        "id": "control",
+        "title": "복제·전환 제어",
+        "subtitle": "쓰기 차단·자동 승격",
+        "x": 512,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "entry",
+        "target": "primary",
+        "kind": "dependency"
+      },
+      {
+        "source": "entry",
+        "target": "standby",
+        "kind": "dependency"
+      },
+      {
+        "source": "primary",
+        "target": "pstore",
+        "kind": "dependency"
+      },
+      {
+        "source": "standby",
+        "target": "dstore",
+        "kind": "dependency"
+      },
+      {
+        "source": "pstore",
+        "target": "dstore",
+        "kind": "replication"
+      },
+      {
+        "source": "control",
+        "target": "entry",
+        "kind": "dependency"
+      },
+      {
+        "source": "control",
+        "target": "pstore",
+        "kind": "dependency"
+      },
+      {
+        "source": "control",
+        "target": "dstore",
+        "kind": "dependency"
+      }
+    ],
+    "zones": [
+      {
+        "label": "주센터",
+        "x": 40,
+        "y": 112,
+        "width": 304,
+        "height": 344
+      },
+      {
+        "label": "DR 센터",
+        "x": 936,
+        "y": 112,
+        "width": 304,
+        "height": 344
+      }
+    ],
+    "note": "두 업무 상자는 동일 컴포넌트의 센터별 인스턴스다. 쓰기는 한 센터에서만 수행하고, DR 영속화 확인 뒤 성공을 응답한다."
+  },
+  "R2": {
+    "description": "업무 개방 제어가 서비스 요청·계약 조회·견적을 우선순위대로 개방하며, 세 서비스가 공통 기반과 동기 영속화된 업무 저장소를 사용한다.",
+    "nodes": [
+      {
+        "id": "open",
+        "title": "업무 개방 제어",
+        "subtitle": "업무별 사용 가능 상태 관리",
+        "x": 512,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": true
+      },
+      {
+        "id": "request",
+        "title": "서비스 요청",
+        "subtitle": "1 · 우선 개방",
+        "x": 64,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "contract",
+        "title": "계약 조회",
+        "subtitle": "2 · 다음 개방",
+        "x": 512,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "quote",
+        "title": "견적",
+        "subtitle": "3 · 이후 개방",
+        "x": 960,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "base",
+        "title": "공통 기반",
+        "subtitle": "인증·최소 계약 확인",
+        "x": 64,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "store",
+        "title": "업무 저장소",
+        "subtitle": "업무·임시 저장 데이터",
+        "x": 512,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": false
+      },
+      {
+        "id": "control",
+        "title": "복제·전환 제어",
+        "subtitle": "동기 영속화·단일 쓰기",
+        "x": 960,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "open",
+        "target": "request",
+        "kind": "dependency"
+      },
+      {
+        "source": "open",
+        "target": "contract",
+        "kind": "dependency"
+      },
+      {
+        "source": "open",
+        "target": "quote",
+        "kind": "dependency"
+      },
+      {
+        "source": "request",
+        "target": "base",
+        "kind": "dependency"
+      },
+      {
+        "source": "contract",
+        "target": "store",
+        "kind": "dependency"
+      },
+      {
+        "source": "quote",
+        "target": "store",
+        "kind": "dependency"
+      },
+      {
+        "source": "base",
+        "target": "store",
+        "kind": "dependency"
+      },
+      {
+        "source": "control",
+        "target": "store",
+        "kind": "dependency"
+      }
+    ],
+    "zones": [],
+    "note": "업무 개방 순위와 내부 의존성 준비 순서는 구분한다. 세 서비스의 DR 실행 단위를 표시하고 주센터의 동일 구성은 생략했다."
+  },
+  "R3": {
+    "description": "업무 접수 상태와 Outbox를 DR에 동기 복제하고, 전환 제어 아래 이벤트 전달기·큐·멱등 작업자가 미완료 후속 작업을 이어 처리한다.",
+    "nodes": [
+      {
+        "id": "intake",
+        "title": "업무 접수",
+        "subtitle": "본문·번호·이벤트 원자적 저장",
+        "x": 64,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "primary",
+        "title": "주센터 업무·Outbox",
+        "subtitle": "성공 응답의 원본 상태",
+        "x": 512,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": false
+      },
+      {
+        "id": "dr",
+        "title": "DR 저장소",
+        "subtitle": "업무·Outbox의 생존 사본",
+        "x": 960,
+        "y": 144,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": true
+      },
+      {
+        "id": "control",
+        "title": "전환 제어",
+        "subtitle": "쓰기 차단·DR 활성화",
+        "x": 64,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "relay",
+        "title": "이벤트 전달기",
+        "subtitle": "미완료 이벤트 확인·재전달",
+        "x": 960,
+        "y": 336,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "queue",
+        "title": "메시지 큐",
+        "subtitle": "재전달 작업 완충",
+        "x": 960,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "store",
+        "focus": false
+      },
+      {
+        "id": "worker",
+        "title": "멱등 작업자",
+        "subtitle": "중복 방지·외부 결과 대사",
+        "x": 512,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "component",
+        "focus": false
+      },
+      {
+        "id": "external",
+        "title": "외부 시스템",
+        "subtitle": "실제 연계 처리 결과",
+        "x": 64,
+        "y": 528,
+        "width": 256,
+        "height": 96,
+        "kind": "external",
+        "focus": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "intake",
+        "target": "primary",
+        "kind": "dependency"
+      },
+      {
+        "source": "primary",
+        "target": "dr",
+        "kind": "replication"
+      },
+      {
+        "source": "control",
+        "target": "dr",
+        "kind": "dependency"
+      },
+      {
+        "source": "control",
+        "target": "relay",
+        "kind": "dependency"
+      },
+      {
+        "source": "relay",
+        "target": "dr",
+        "kind": "dependency"
+      },
+      {
+        "source": "relay",
+        "target": "queue",
+        "kind": "dependency"
+      },
+      {
+        "source": "worker",
+        "target": "queue",
+        "kind": "dependency"
+      },
+      {
+        "source": "worker",
+        "target": "external",
+        "kind": "dependency"
+      }
+    ],
+    "zones": [],
+    "note": "큐 메시지는 업무 원본을 대신하지 않는다. 작업자는 저장 상태와 외부 실행 결과를 대사하며, 재전달과 실제 지급 완료를 구분한다."
+  }
+}
