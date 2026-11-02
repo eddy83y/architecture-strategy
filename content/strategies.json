@@ -1,0 +1,295 @@
+{
+  "basis": "기존 조사 문서 01~06과 직전 점검 문서 07에 기록된 근거만 사용했다. 아래 구조·조합은 조사 근거를 프로젝트 QAS에 맞춰 작성한 설계안이다. 원문 도서가 이 프로젝트에 직접 권고한 전략이나 검증 완료 결과는 아니다.",
+  "strategies": [
+    {
+      "id": "P1",
+      "group": "성능",
+      "title": "계층형 모듈 구조의 복제 확장과 버전별 캐시",
+      "intro": "채널·업무·데이터 접근을 계층으로 구분하고 견적과 가입 접수의 업무 경계를 한 애플리케이션 안에서 유지한다. 동일 애플리케이션의 무상태 인스턴스를 늘려 이벤트 요청을 분산한다. 반복 사용하는 상품·요율 자료는 Cache-Aside로 조회한다. 보험료는 유효한 입력과 동일한 적용 버전으로 계산하며 가입 접수는 접수번호와 본문을 영속 저장한 뒤 응답한다. 이 통합 전략은 캐시로 반복 조회 비용을 줄이고 복제 인스턴스로 동시 처리 자원을 확보한다.",
+      "style": "Module의 Layers·분해 스타일 + C&C의 Call-and-Return·Repository 스타일. 모듈형 모놀리스의 동일 배포 단위를 복제하는 적용안이다.",
+      "pattern": "Cache-Aside. 상품·요율 기준정보의 캐시 조회와 미적재 시 원본 조회를 결합한다.",
+      "tactics": "자원 증가·요청 분산, 이벤트 전 용량 확보, 반복 계산·조회 감소, 캐시 적용 버전 구분·무효화, DB 연결과 외부 호출량 제한. 전술 이름은 기존 조사 내용을 행동으로 정리한 것이며 SAIP 전술 목록의 직접 인용이 아니다.",
+      "flow": "고객 요청 → 분산 진입점 → 무상태 업무 인스턴스 → 캐시/원본 → 계산 결과 또는 영속 접수 결과 표시.",
+      "fit": "5배 동시 사용자 부하를 여러 인스턴스가 처리하고 반복 조회를 줄인다. 견적 평균 3초와 접수번호 표시 평균 60초는 사용자 화면 구간으로 각각 검증한다.",
+      "limits": "캐시 적중률이 낮거나 DB·외부 연계가 병목이면 확장 효과가 제한된다. TTL만으로 정확성을 보장하지 않으며 요율 개정과 버전 혼용을 시험한다.",
+      "evidence": [
+        "E1",
+        "E2",
+        "E3",
+        "E9",
+        "E15"
+      ],
+      "diagram": "Architecture · 계층별 실행 요소와 조회 경로. 동일 인스턴스는 하나의 집합으로 표시하며 물리 배치·운영 도구는 생략한다."
+    },
+    {
+      "id": "P2",
+      "group": "성능",
+      "title": "동기 견적·영속 접수와 비동기 후속 처리의 분리",
+      "intro": "보험료 결과와 가입 접수번호를 반환하는 짧은 경로를 후속 처리 경로에서 분리한다. 견적은 동기 산출 경로로 정확한 결과를 반환하고 가입 접수는 필요한 검증을 수행한 다음 접수 내용·번호·후속 처리 의도를 함께 저장한다. 이후 작업은 큐와 작업자가 처리한다. Half-Sync/Half-Async의 목적에 맞춰 동기·비동기 처리를 분리하고 큐 기반 부하 평탄화와 연결한다. 이렇게 후속 심사·연계의 지연이 접수번호 발급을 직접 막는 범위를 줄인다.",
+      "style": "C&C의 Call-and-Return + Event 기반 스타일 + Repository 스타일. 사용자 응답 경로와 후속 이벤트 경로를 구분한다.",
+      "pattern": "Half-Sync/Half-Async의 동기·비동기 분리 목적 + Queue-Based Load Leveling + Transactional Outbox. POSA의 상세 구현을 그대로 채택한 것으로 주장하지 않는다.",
+      "tactics": "불필요한 응답 경로 작업 제거, 요청 버퍼링, 작업자 처리율 제어, 중복 방지·멱등 처리, 재시도 상한·백오프·지터, 대기열 연령 관측.",
+      "flow": "견적 요청은 동기 산출. 가입 요청은 접수·outbox 원자적 저장 후 접수번호 응답. outbox → 큐 → 작업자 순서로 후속 처리.",
+      "fit": "접수 완료 범위가 계약·결제 완료가 아닌 접수번호 발급이라는 확정 조건을 활용한다. 견적 3초는 별도 동기 경로를 최적화하고 접수 60초에는 검증·저장·화면 표시 시간을 포함한다.",
+      "limits": "필수 선행 검증을 임의로 뒤로 미루지 않는다. 큐 적재 성공만으로 업무 접수 성공을 대신하지 않는다. 생산량이 소비량을 계속 초과하면 후속 지연이 쌓이므로 1시간 부하와 복구 후 적체 해소를 시험한다.",
+      "evidence": [
+        "E1",
+        "E4",
+        "E6",
+        "E7",
+        "E10"
+      ],
+      "diagram": "Architecture · 동기 응답과 비동기 후속 경로."
+    },
+    {
+      "id": "P3",
+      "group": "성능",
+      "title": "견적·접수 서비스 분리와 CQRS 기반 개별 최적화",
+      "intro": "견적과 가입 접수를 별도 실행 서비스로 나누어 이벤트 때 필요한 서비스의 자원을 각각 늘린다. 견적 서비스는 읽기·계산 모델을, 가입 접수 서비스는 검증·번호 발급·저장이라는 쓰기 모델을 중심으로 설계한다. CQRS로 조회와 명령의 책임을 나누고 동기 호출과 후속 이벤트를 조합한다. 두 서비스가 동일한 자원을 경쟁하는 범위를 줄이는 대신 서비스 간 통신·버전·데이터 일관성을 명시적으로 관리한다.",
+      "style": "Microservices 스타일 + C&C의 Call-and-Return·Event·Repository 스타일. 서비스 책임과 독립 확장 단위를 일치시킨다.",
+      "pattern": "CQRS + 선별적 Cache-Aside. CQRS의 읽기·쓰기 모델 분리를 적용하며 별도 DB와 Event Sourcing은 필수로 도입하지 않는다.",
+      "tactics": "서비스별 자원 증가, 읽기·쓰기 경로별 자원 경쟁 제어, 유효 버전 캐싱, 타임아웃·재시도 예산, 개별 지연·오류·DB 부하 관측.",
+      "flow": "분산 진입점 → 견적 조회·계산 서비스 / 가입 접수 명령 서비스 → 각 책임에 맞는 모델 → 공통 내구성 경계.",
+      "fit": "견적 요청이 집중되면 계산 경로를, 가입 요청이 집중되면 접수 경로를 개별 확장한다. 조회 사본의 최신성이 입증되지 않으면 정확한 보험료 산출에 사용하지 않는다.",
+      "limits": "별도 읽기 저장소를 선택하면 동기화 지연과 read-after-write를 검증한다. 분산 운영·통합 시험 부담이 늘어난다.",
+      "evidence": [
+        "E1",
+        "E2",
+        "E3",
+        "E5",
+        "E6",
+        "E9",
+        "E15"
+      ],
+      "diagram": "Architecture · 견적/접수의 실행 책임과 데이터 모델. 각 모델은 논리 책임이며 별도 물리 DB 확정을 뜻하지 않는다."
+    },
+    {
+      "id": "A1",
+      "group": "신뢰성·가용성",
+      "title": "다중 인스턴스와 카나리 배포를 통한 변경 위험 제한",
+      "intro": "계층형 업무 애플리케이션을 여러 인스턴스에서 운영하고 새 버전은 일부 실제 트래픽으로 먼저 검증한 뒤 점차 확대한다. 구·신 버전이 공존하는 동안 공통 저장 데이터와 인터페이스의 호환성을 유지하고 거래 오류나 지연이 악화되면 기존 버전으로 돌린다. 점검할 인스턴스를 제외해도 남은 인스턴스가 거래를 처리하도록 구성한다. 임시 저장은 특정 서버 메모리에서 분리한다. 카나리 관측과 복제 실행 구조를 함께 사용하는 가용성 전략이다.",
+      "style": "Module의 Layers·분해 스타일 + C&C의 Call-and-Return·Repository 스타일. 모듈형 애플리케이션의 복제 실행 구조를 적용한다.",
+      "pattern": "Canary Deployment + 공통 상태 저장. 후자는 조사된 임시 저장 요구를 실행 구조에 적용한 설계 조합이며 새 패턴명으로 분류하지 않는다.",
+      "tactics": "실행 요소 다중화, 준비 상태 확인, 진행 요청 배출, 구·신 버전 호환, 거래 지표 기반 관측·복귀, 임시 데이터 영속화.",
+      "flow": "업무 트래픽 → 기존/카나리 인스턴스 → 공통 업무·임시 저장소. 업무 관측 결과로 카나리 확대 또는 기존 버전 복귀.",
+      "fit": "애플리케이션 배포·호스트 점검 중 거래를 이어가며 잘못된 변경의 노출 범위를 줄인다. DB·외부 점검에는 아래 가용성 공통 조건을 함께 적용한다.",
+      "limits": "표본이 적거나 관측 시간이 짧으면 안전한 확대 판단이 어렵다. 공통 DB·인증·네트워크의 단일 장애점은 별도 제거해야 한다. 호환되지 않는 DB 변경을 카나리만으로 무중단 처리할 수 없다.",
+      "evidence": [
+        "E1",
+        "E2",
+        "E8",
+        "E9",
+        "E11"
+      ],
+      "diagram": "Architecture · 구·신 버전의 공존과 트래픽 제어. DB 내부 복제와 외부 축소 모드는 가용성 공통 조건으로 본문에 남긴다."
+    },
+    {
+      "id": "A2",
+      "group": "신뢰성·가용성",
+      "title": "Blue-Green 전환과 호환 가능한 DB 변경의 결합",
+      "intro": "운영 버전 Blue와 다음 버전 Green을 별도 실행 환경으로 준비한다. Green의 거래 처리를 검증한 후 진입 트래픽을 전환하고 문제가 발생하면 호환성이 유지되는 동안 Blue로 복귀한다. DB는 애플리케이션 환경 전환과 분리해 추가 변경·데이터 이행·코드 전환·구조 정리 순으로 변경한다. 두 환경이 진행 중 업무와 임시 저장을 이어 사용할 수 있게 해 실행 환경 교체와 데이터 구조 변경을 함께 다룬다.",
+      "style": "C&C의 Call-and-Return·Repository 스타일 + Module의 Layers 스타일. Blue/Green은 스타일이 아닌 배포 패턴이며 두 환경이 업무 상태를 공유한다.",
+      "pattern": "Blue-Green Deployment + 조사된 추가→전환→삭제 방식의 호환 스키마 변경. 롤백 가능한 구간을 명시한다.",
+      "tactics": "새 환경 사전 검증, 트래픽 전환, 진행 요청 배출, 인터페이스·스키마 호환, 단계적 데이터 이행·대조, 임시 저장 보존, 실패 시 복귀.",
+      "flow": "Blue 운영 → Green 사전 검증 → 트래픽 전환. 공통 DB는 추가·이행 후 전환하며 구버전 제거 후에만 불필요 구조 삭제.",
+      "fit": "애플리케이션·인프라 교체와 DB 변경의 상호 의존을 관리한다. 점검 중에도 동일한 업무 거래를 수행하는 것이 성공 기준이다. 외부 점검에는 가용성 공통 조건을 적용한다.",
+      "limits": "배포 때 추가 자원이 필요하며 공통 DB의 엔진 점검·잠금까지 자동 해결하지 않는다. 구버전에서 필요한 필드를 제거한 뒤에는 단순 트래픽 복귀가 불가능할 수 있다.",
+      "evidence": [
+        "E1",
+        "E9",
+        "E11"
+      ],
+      "diagram": "Architecture · 운영/대기 환경과 공통 상태의 관계. 스키마 변경 순서는 본문과 그림 하단 주석에 표시하고 DB 전환 내부 절차는 생략한다."
+    },
+    {
+      "id": "A3",
+      "group": "신뢰성·가용성",
+      "title": "외부 연계 격리와 영속 접수 기반 축소 운영",
+      "intro": "외부 연계를 업무 서비스와 분리하고 장애·점검 중인 연계는 회로 차단과 타임아웃으로 격리한다. 처리 보류가 허용되는 요청은 내부 저장소에 접수한 뒤 큐에 남겨 외부 복구 후 재처리한다. 다른 업무 서비스는 자체 거래를 계속 처리한다. 서비스 분리·이벤트 전달·장애 격리를 결합해 외부 점검의 파급을 줄이는 전략이다. 정확한 보험료 산출이나 실제 지급 완료에 필수인 외부 결과를 임의로 대체하지 않는다.",
+      "style": "Microservices + C&C의 Event·Call-and-Return·Repository 스타일. 내부 거래와 외부 연계 실행의 경계를 구분한다.",
+      "pattern": "Circuit Breaker + Queue-Based Load Leveling + Transactional Outbox. 영속 접수와 재전달을 연결한다.",
+      "tactics": "장애 연계 격리, 대기시간 제한, 기능 축소, 요청 영속 보존, 제한된 재시도·백오프·지터, 멱등 처리·결과 대사, 업무별 정상 여부 관측.",
+      "flow": "내부 업무 접수 → 업무·outbox 저장 → 큐 → 연계 어댑터 → 외부 시스템. 외부 점검 중에는 허용된 요청을 보류하고 복구 후 처리.",
+      "fit": "외부 점검 중 접수 가능한 업무를 지속하면서 연계 장애가 다른 업무의 자원을 고갈시키지 않도록 한다. 내부 배포·DB·인프라 점검에는 가용성 공통 조건을 적용한다.",
+      "limits": "회로 차단은 외부 업무 결과를 생성하지 않는다. 보류가 허용되지 않는 필수 거래는 유효한 대체 연계가 있어야 한다. 오류 안내나 큐 적재만을 전체 업무의 정상 완료로 계산하지 않는다.",
+      "evidence": [
+        "E1",
+        "E4",
+        "E6",
+        "E9",
+        "E10",
+        "E12"
+      ],
+      "diagram": "Architecture · 영속 접수와 외부 점검 시 격리 지점. 고객에게 표시할 상태와 보류 허용 여부는 본문에 명시한다."
+    },
+    {
+      "id": "R1",
+      "group": "신뢰성·복구성",
+      "title": "단일 쓰기 주체와 동기 복제 기반 일괄 DR 전환",
+      "intro": "계층형 업무 애플리케이션과 데이터 저장소를 DR 센터에 사전 준비하고 쓰기 주체는 한 센터로 제한한다. 센터 소실 후에도 남는 사본에 업무 저장과 임시 저장이 영속화되었음을 확인한 뒤 성공을 응답한다. 센터 장애를 감지하면 기존 쓰기를 차단하고 DR 저장소와 애플리케이션을 자동 전환한다. 전체 실행 환경을 준비한 뒤 사용자 업무는 지정된 우선순위로 개방한다. 완료 판정과 원센터 복귀는 사람이 수행한다.",
+      "style": "Module의 Layers + C&C의 Call-and-Return·Repository 스타일. 배치 관점에서 주센터/DR센터를 나누며 센터 배치는 별도 스타일 이름으로 만들지 않는다.",
+      "pattern": "Warm Standby와 주·대기 복제 구성. DB 대기 서버에 관한 조사 원리를 전체 업무의 사전 준비 DR 구조에 적용한 설계안이다.",
+      "tactics": "센터 간 동기 영속화, 장애 감지, 기존 쓰기 차단(fencing), 자동 승격·경로 전환, 복제 상태 대조, 우선순위 개방, 수동 완료 판정·Failback.",
+      "flow": "주센터 업무 저장 → DR센터 영속화 확인 → 고객 성공 응답. 센터 장애 시 쓰기 차단 → DR 자동 전환 → 우선순위 개방 → 수동 판정.",
+      "fit": "센터 장애의 RPO 0을 저장 완료 경계와 연결하고 RTO 3시간 이내를 목표로 한다. 저장 완료한 임시 작업까지 같은 내구성 경계를 적용한다.",
+      "limits": "센터 간 왕복 지연이 쓰기 응답에 더해진다. 원격 영속화를 확인하지 못할 때 쓰기를 계속 성공 처리하면 RPO 0 근거가 깨질 수 있다. 자동 전환은 DB 복제 설정만으로 완성되지 않는다.",
+      "evidence": [
+        "E1",
+        "E9",
+        "E13",
+        "E14"
+      ],
+      "diagram": "Architecture · 센터별 실행/저장 경계와 자동 승격 제어. 데이터 복제와 전환 명령을 서로 다른 선으로 구분한다."
+    },
+    {
+      "id": "R2",
+      "group": "신뢰성·복구성",
+      "title": "업무 서비스 분리와 우선순위별 단계 복구",
+      "intro": "서비스 요청·계약 조회·견적을 독립적으로 개방할 수 있는 실행 서비스로 나누고 각 서비스의 데이터와 DR 실행 환경을 사전 준비한다. 공통 기반과 데이터 안전성을 확보한 뒤 서비스 요청, 계약 조회, 견적 순서로 실제 업무를 검증하며 개방한다. 마이크로서비스의 독립 실행·배포 경계를 복구 단위로 활용하고 주·대기 구조와 동기 영속화를 함께 적용한다. 복구의 단위는 단순 기동 순서가 아닌 업무별 사용 가능 상태다.",
+      "style": "Microservices + C&C의 Call-and-Return·Repository 스타일. 독립 배포의 경계를 복구·개방 경계로 활용하는 프로젝트 적용안이다.",
+      "pattern": "서비스별 Warm Standby + 필요한 외부 의존성의 Circuit Breaker. ‘단계 복구’를 조사에 없는 새 패턴 이름으로 분류하지 않는다.",
+      "tactics": "복구 단위 분리, 공통 의존성 선행 준비, 서비스별 자동 활성화·검증, 동기 영속화·단일 쓰기 보장, 우선순위 개방, 허용된 축소 운영, 수동 완료 판단.",
+      "flow": "자동 기반 전환 후 1 서비스 요청 개방 → 2 계약 조회 개방 → 3 견적 개방. 각 단계에서 입력·처리·정상 결과를 확인하고 사용자가 전체 완료 선언.",
+      "fit": "QAS에 정해진 복구 우선순위를 서비스 경계로 표현한다.",
+      "limits": "서비스 요청에 계약 확인이 필요하면 계약 저장소·최소 조회 기반은 먼저 준비한다. 사용자 개방 순서와 내부 기동 순서는 다를 수 있다. 서비스 분리만으로 RPO 0·3시간을 보장하지 않으며 운영·개발 비용이 증가한다.",
+      "evidence": [
+        "E1",
+        "E3",
+        "E9",
+        "E12",
+        "E13",
+        "E14"
+      ],
+      "diagram": "Process · Stage framework with semantic slots. 3개 업무 단계에 입력·처리·검증 슬롯을 같은 순서로 배치한다. 공통 기반 전환과 수동 복귀는 본문에 남긴다."
+    },
+    {
+      "id": "R3",
+      "group": "신뢰성·복구성",
+      "title": "영속 접수와 이벤트 재전달을 결합한 작업 연속성 복구",
+      "intro": "업무 상태·접수번호·임시 저장·처리할 이벤트를 복구 가능한 저장 경계에 남기고 센터 장애 뒤 DR에서 미완료 후속 작업을 다시 전달한다. 원본 업무 상태와 outbox는 동일 트랜잭션으로 기록하고 센터 간 동기 영속화를 확인한다. DR에서 단일 쓰기 주체를 확보한 후 큐와 작업자를 재개한다. 중복 메시지는 같은 업무 결과로 수렴하도록 처리한다. 저장 데이터 보존과 미완료 작업의 이어 처리를 함께 다루는 이벤트 기반 복구 전략이다.",
+      "style": "C&C의 Event·Repository·Call-and-Return 스타일. 동기 접수 경로와 비동기 작업 재개 경로를 구분한다.",
+      "pattern": "Transactional Outbox + Queue-Based Load Leveling + Warm Standby. Event Sourcing 전면 도입이나 전체 이력 재생을 필수로 추가하지 않는다.",
+      "tactics": "동기 영속화, 원자적 상태·이벤트 기록, 처리 상태 확인, 미완료 이벤트 재전달, 멱등 처리·중복 방지, 제한된 재시도, 외부 실행 결과 대사, 우선 업무부터 재개.",
+      "flow": "주센터 업무·outbox 저장 → DR 영속 사본. 장애 후 쓰기 차단·자동 승격 → 미완료 이벤트 확인 → 큐 재전달 → 멱등 작업자 → 업무 결과 대사.",
+      "fit": "저장 완료한 데이터의 RPO 0과 접수 후 작업의 연속성을 연결한다. 서비스 요청·계약 조회·견적의 순서로 개방하며 사람의 복구 완료 판정을 유지한다.",
+      "limits": "outbox만으로 센터 장애 RPO 0이 되지 않으며 원격 영속화가 필요하다. 메시지 수신을 외부 지급 실행 완료와 동일시하지 않는다. 적체 재처리가 신규 업무를 압도하지 않게 제어하고 모든 이벤트 처리 완료를 복구 선언의 필수 조건으로 임의 추가하지 않는다.",
+      "evidence": [
+        "E1",
+        "E4",
+        "E6",
+        "E9",
+        "E10",
+        "E13",
+        "E14"
+      ],
+      "diagram": "Architecture · 원본 상태·outbox의 센터 간 보존과 DR 후속 처리 재개. 외부 부작용의 상세 대사는 본문에 남긴다."
+    }
+  ],
+  "evidence": {
+    "E1": {
+      "label": "Style 분류: Layers·Call-and-Return·Event·Repository",
+      "location": "§2.2",
+      "level": "공개 스타일 정의·목차. 구체 구조의 효과는 아래 패턴·기술 근거와 구분",
+      "url": "https://www.informit.com/articles/article.aspx?p=1641654&seqNum=4",
+      "document": "06_style_pattern_books_ko.md"
+    },
+    "E2": {
+      "label": "모듈형 모놀리스의 경계와 분산 운영 부담",
+      "location": "§4, E03",
+      "level": "기업 공개 사례. 프로젝트 성능 수치로 전용하지 않음",
+      "url": "https://shopify.engineering/deconstructing-monolith-designing-software-maximizes-developer-productivity",
+      "document": "01_strategy_research_ko.md"
+    },
+    "E3": {
+      "label": "Microservices의 독립 배포·확장과 부담",
+      "location": "§4, P04",
+      "level": "공식 기술 설명을 요약한 기존 조사",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/microservices",
+      "document": "01_strategy_research_ko.md"
+    },
+    "E4": {
+      "label": "Queue-Based Load Leveling",
+      "location": "§4, P02 및 07 §2",
+      "level": "공식 패턴. 완충·소비율·내구성·중복 처리의 한계",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/queue-based-load-leveling",
+      "document": "01_strategy_research_ko.md"
+    },
+    "E5": {
+      "label": "CQRS",
+      "location": "§4, P03",
+      "level": "공식 패턴. 단일/분리 저장소와 최종 일관성 구분",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/cqrs",
+      "document": "01_strategy_research_ko.md"
+    },
+    "E6": {
+      "label": "타임아웃·재시도·백오프·지터·멱등성",
+      "location": "§4, P05 및 02 §4",
+      "level": "공식 실무 기술 설명",
+      "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
+      "document": "01_strategy_research_ko.md"
+    },
+    "E7": {
+      "label": "Half-Sync/Half-Async의 동기·비동기 분리 목적",
+      "location": "§3.2, K11",
+      "level": "저자 공개 초록. 상세 구현·보편적 성능 우월성을 주장하지 않음",
+      "url": "https://www.dre.vanderbilt.edu/~schmidt/POSA/POSA2/pattern-abstracts.html",
+      "document": "06_style_pattern_books_ko.md"
+    },
+    "E8": {
+      "label": "Canary Deployment",
+      "location": "§4, P06 및 02 §2·4",
+      "level": "공식 SRE 설명. 표본·기간·대조군 조건",
+      "url": "https://sre.google/workbook/canarying-releases/",
+      "document": "01_strategy_research_ko.md"
+    },
+    "E9": {
+      "label": "프로젝트 적용 조건과 기존 점검",
+      "location": "§2~6",
+      "level": "기존 점검의 설계 추론. 외부 연구의 직접 결론과 구분",
+      "url": "",
+      "document": "07_QAS_strategy_review_ko.md"
+    },
+    "E10": {
+      "label": "Transactional Outbox",
+      "location": "§2·4, S06",
+      "level": "직전 점검에 포함된 공식 패턴 조사",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html",
+      "document": "07_QAS_strategy_review_ko.md"
+    },
+    "E11": {
+      "label": "Blue-Green과 호환 스키마 변경",
+      "location": "§3, S05",
+      "level": "직전 점검에 포함된 공식 배포 지침",
+      "url": "https://docs.aws.amazon.com/whitepapers/latest/blue-green-deployments/best-practices-for-managing-data-synchronization-and-schema-changes.html",
+      "document": "07_QAS_strategy_review_ko.md"
+    },
+    "E12": {
+      "label": "Circuit Breaker",
+      "location": "§3, S07",
+      "level": "직전 점검에 포함된 공식 패턴 조사",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker",
+      "document": "07_QAS_strategy_review_ko.md"
+    },
+    "E13": {
+      "label": "대기 서버·동기/비동기 복제와 원격 확인",
+      "location": "§4, S03",
+      "level": "직전 점검에 포함된 DB 공식 설명. 제품 채택을 의미하지 않음",
+      "url": "https://www.postgresql.org/docs/18/warm-standby.html",
+      "document": "07_QAS_strategy_review_ko.md"
+    },
+    "E14": {
+      "label": "Failover·이중 쓰기 방지·복귀 절차",
+      "location": "§4, S04",
+      "level": "직전 점검에 포함된 DB 공식 설명",
+      "url": "https://www.postgresql.org/docs/18/warm-standby-failover.html",
+      "document": "07_QAS_strategy_review_ko.md"
+    },
+    "E15": {
+      "label": "Cache-Aside",
+      "location": "§4, P01",
+      "level": "공식 패턴. 원본 일관성·만료·무효화의 한계",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside",
+      "document": "01_strategy_research_ko.md"
+    }
+  }
+}
