@@ -1,5 +1,5 @@
 {
-  "basis": "기존 조사 문서 01~06과 직전 점검 문서 07에 기록된 근거만 사용했다. 아래 구조·조합은 조사 근거를 프로젝트 QAS에 맞춰 작성한 설계안이다. 원문 도서가 이 프로젝트에 직접 권고한 전략이나 검증 완료 결과는 아니다.",
+  "basis": "외부 공개 출처를 참고해 프로젝트 QAS에 맞춘 설계안을 작성했다. 구조의 조합과 비교·선택은 설계 판단이며, 외부 출처의 직접 권고나 구현·실측 검증 결과가 아니다.",
   "strategies": [
     {
       "id": "P1",
@@ -16,7 +16,6 @@
         "E1",
         "E2",
         "E3",
-        "E9",
         "E15"
       ],
       "diagram": "Architecture · 계층별 실행 요소와 조회 경로. 동일 인스턴스는 하나의 집합으로 표시하며 물리 배치·운영 도구는 생략한다."
@@ -58,7 +57,6 @@
         "E3",
         "E5",
         "E6",
-        "E9",
         "E15"
       ],
       "diagram": "Architecture · 견적/접수의 실행 책임과 데이터 모델. 각 모델은 논리 책임이며 별도 물리 DB 확정을 뜻하지 않는다."
@@ -78,7 +76,6 @@
         "E1",
         "E2",
         "E8",
-        "E9",
         "E11"
       ],
       "diagram": "Architecture · 구·신 버전의 공존과 트래픽 제어. DB 내부 복제와 외부 축소 모드는 가용성 공통 조건으로 본문에 남긴다."
@@ -96,7 +93,6 @@
       "limits": "배포 때 추가 자원이 필요하며 공통 DB의 엔진 점검·잠금까지 자동 해결하지 않는다. 구버전에서 필요한 필드를 제거한 뒤에는 단순 트래픽 복귀가 불가능할 수 있다.",
       "evidence": [
         "E1",
-        "E9",
         "E11"
       ],
       "diagram": "Architecture · 운영/대기 환경과 공통 상태의 관계. 스키마 변경 순서는 본문과 그림 하단 주석에 표시하고 DB 전환 내부 절차는 생략한다."
@@ -116,7 +112,6 @@
         "E1",
         "E4",
         "E6",
-        "E9",
         "E10",
         "E12"
       ],
@@ -135,7 +130,6 @@
       "limits": "센터 간 왕복 지연이 쓰기 응답에 더해진다. 원격 영속화를 확인하지 못할 때 쓰기를 계속 성공 처리하면 RPO 0 근거가 깨질 수 있다. 자동 전환은 DB 복제 설정만으로 완성되지 않는다.",
       "evidence": [
         "E1",
-        "E9",
         "E13",
         "E14"
       ],
@@ -155,7 +149,6 @@
       "evidence": [
         "E1",
         "E3",
-        "E9",
         "E12",
         "E13",
         "E14"
@@ -177,7 +170,6 @@
         "E1",
         "E4",
         "E6",
-        "E9",
         "E10",
         "E13",
         "E14"
@@ -188,108 +180,73 @@
   "evidence": {
     "E1": {
       "label": "Style 분류: Layers·Call-and-Return·Event·Repository",
-      "location": "§2.2",
       "level": "공개 스타일 정의·목차. 구체 구조의 효과는 아래 패턴·기술 근거와 구분",
-      "url": "https://www.informit.com/articles/article.aspx?p=1641654&seqNum=4",
-      "document": "06_style_pattern_books_ko.md"
+      "url": "https://www.informit.com/articles/article.aspx?p=1641654&seqNum=4"
     },
     "E2": {
       "label": "모듈형 모놀리스의 경계와 분산 운영 부담",
-      "location": "§4, E03",
       "level": "기업 공개 사례. 프로젝트 성능 수치로 전용하지 않음",
-      "url": "https://shopify.engineering/deconstructing-monolith-designing-software-maximizes-developer-productivity",
-      "document": "01_strategy_research_ko.md"
+      "url": "https://shopify.engineering/deconstructing-monolith-designing-software-maximizes-developer-productivity"
     },
     "E3": {
       "label": "Microservices의 독립 배포·확장과 부담",
-      "location": "§4, P04",
-      "level": "공식 기술 설명을 요약한 기존 조사",
-      "url": "https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/microservices",
-      "document": "01_strategy_research_ko.md"
+      "level": "공식 아키텍처 설명",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/microservices"
     },
     "E4": {
       "label": "Queue-Based Load Leveling",
-      "location": "§4, P02 및 07 §2",
       "level": "공식 패턴. 완충·소비율·내구성·중복 처리의 한계",
-      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/queue-based-load-leveling",
-      "document": "01_strategy_research_ko.md"
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/queue-based-load-leveling"
     },
     "E5": {
       "label": "CQRS",
-      "location": "§4, P03",
       "level": "공식 패턴. 단일/분리 저장소와 최종 일관성 구분",
-      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/cqrs",
-      "document": "01_strategy_research_ko.md"
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/cqrs"
     },
     "E6": {
       "label": "타임아웃·재시도·백오프·지터·멱등성",
-      "location": "§4, P05 및 02 §4",
       "level": "공식 실무 기술 설명",
-      "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
-      "document": "01_strategy_research_ko.md"
+      "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/"
     },
     "E7": {
       "label": "Half-Sync/Half-Async의 동기·비동기 분리 목적",
-      "location": "§3.2, K11",
       "level": "저자 공개 초록. 상세 구현·보편적 성능 우월성을 주장하지 않음",
-      "url": "https://www.dre.vanderbilt.edu/~schmidt/POSA/POSA2/pattern-abstracts.html",
-      "document": "06_style_pattern_books_ko.md"
+      "url": "https://www.dre.vanderbilt.edu/~schmidt/POSA/POSA2/pattern-abstracts.html"
     },
     "E8": {
       "label": "Canary Deployment",
-      "location": "§4, P06 및 02 §2·4",
       "level": "공식 SRE 설명. 표본·기간·대조군 조건",
-      "url": "https://sre.google/workbook/canarying-releases/",
-      "document": "01_strategy_research_ko.md"
-    },
-    "E9": {
-      "label": "프로젝트 적용 조건과 기존 점검",
-      "location": "§2~6",
-      "level": "기존 점검의 설계 추론. 외부 연구의 직접 결론과 구분",
-      "url": "",
-      "document": "07_QAS_strategy_review_ko.md"
+      "url": "https://sre.google/workbook/canarying-releases/"
     },
     "E10": {
       "label": "Transactional Outbox",
-      "location": "§2·4, S06",
-      "level": "직전 점검에 포함된 공식 패턴 조사",
-      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html",
-      "document": "07_QAS_strategy_review_ko.md"
+      "level": "공식 패턴 설명",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html"
     },
     "E11": {
       "label": "Blue-Green과 호환 스키마 변경",
-      "location": "§3, S05",
-      "level": "직전 점검에 포함된 공식 배포 지침",
-      "url": "https://docs.aws.amazon.com/whitepapers/latest/blue-green-deployments/best-practices-for-managing-data-synchronization-and-schema-changes.html",
-      "document": "07_QAS_strategy_review_ko.md"
+      "level": "공식 배포 지침",
+      "url": "https://docs.aws.amazon.com/whitepapers/latest/blue-green-deployments/best-practices-for-managing-data-synchronization-and-schema-changes.html"
     },
     "E12": {
       "label": "Circuit Breaker",
-      "location": "§3, S07",
-      "level": "직전 점검에 포함된 공식 패턴 조사",
-      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker",
-      "document": "07_QAS_strategy_review_ko.md"
+      "level": "공식 패턴 설명",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker"
     },
     "E13": {
       "label": "대기 서버·동기/비동기 복제와 원격 확인",
-      "location": "§4, S03",
-      "level": "직전 점검에 포함된 DB 공식 설명. 제품 채택을 의미하지 않음",
-      "url": "https://www.postgresql.org/docs/18/warm-standby.html",
-      "document": "07_QAS_strategy_review_ko.md"
+      "level": "DB 공식 문서. 제품 채택을 의미하지 않음",
+      "url": "https://www.postgresql.org/docs/18/warm-standby.html"
     },
     "E14": {
       "label": "Failover·이중 쓰기 방지·복귀 절차",
-      "location": "§4, S04",
-      "level": "직전 점검에 포함된 DB 공식 설명",
-      "url": "https://www.postgresql.org/docs/18/warm-standby-failover.html",
-      "document": "07_QAS_strategy_review_ko.md"
+      "level": "DB 공식 문서",
+      "url": "https://www.postgresql.org/docs/18/warm-standby-failover.html"
     },
     "E15": {
       "label": "Cache-Aside",
-      "location": "§4, P01",
       "level": "공식 패턴. 원본 일관성·만료·무효화의 한계",
-      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside",
-      "document": "01_strategy_research_ko.md"
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside"
     }
   }
 }

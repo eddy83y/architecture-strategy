@@ -32,7 +32,7 @@ def shell(title,description,body,current='index'):
 <a class="skip" href="#main">본문으로 건너뛰기</a>
 <header class="site-header"><div class="header-inner"><a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">A</span><span>Architecture Strategy<small>다이렉트 자동차보험 시스템</small></span></a>{nav(current)}</div></header>
 <main id="main">{body}</main>
-<footer class="site-footer"><div><strong>다이렉트 자동차보험 · 아키텍처 전략</strong><p>기존 조사 자료에 근거한 설계 검토 · 2026-11-02</p></div><a href="index.html">전체 QAS로 돌아가기 ↑</a></footer>
+<footer class="site-footer"><div><strong>다이렉트 자동차보험 · 아키텍처 전략</strong><p>외부 공개 출처를 참고한 설계 검토 · 2026-11-02</p></div><a href="index.html">전체 QAS로 돌아가기 ↑</a></footer>
 </body></html>'''
 
 
@@ -92,8 +92,8 @@ def sources(q):
     for key in keys:
         ref=RESEARCH['evidence'][key]
         label=f'<a href="{e(ref["url"],quote=True)}" target="_blank" rel="noopener noreferrer">{e(ref["label"])} ↗</a>' if ref['url'] else e(ref['label'])
-        entries.append(f'<li id="source-{key}"><span>{key}</span><div><strong>{label}</strong><p>{e(ref["document"])} · {e(ref["location"])}</p><p>{e(ref["level"])}</p></div></li>')
-    return '<section class="sources" id="sources"><div class="section-heading"><h2>조사 근거와 적용 범위</h2><span class="section-label">SOURCES</span></div><p>기존 조사 문서 01~06과 점검 문서 07의 근거를 사용했다. 구조의 조합과 비교·선택은 프로젝트 QAS에 적용한 설계 판단이며 구현·실측 검증 결과는 아니다. 전술 명칭은 조사된 동작을 정리한 것으로, 미열람한 SAIP 4판 장의 전술 목록을 직접 인용하지 않았다.</p><ol class="source-list">'+''.join(entries)+'</ol></section>'
+        entries.append(f'<li id="source-{key}"><span>{key}</span><div><strong>{label}</strong><p>{e(ref["level"])}</p></div></li>')
+    return '<section class="sources" id="sources"><div class="section-heading"><h2>조사 근거와 적용 범위</h2><span class="section-label">SOURCES</span></div><p>아래 외부 공개 출처를 참고했다. 구조의 조합과 비교·선택은 프로젝트 QAS에 적용한 설계 판단이며, 외부 출처의 직접 권고나 구현·실측 검증 결과는 아니다.</p><ol class="source-list">'+''.join(entries)+'</ol></section>'
 
 
 def qas_page(q):
